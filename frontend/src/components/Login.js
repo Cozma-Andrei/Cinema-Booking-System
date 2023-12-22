@@ -2,15 +2,47 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import { Modal } from "react-bootstrap";
 import { useState } from "react";
+import Swal from 'sweetalert2';
 
 function Login(props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const handleLogin = () => {
-    setEmail('');
-    setPassword('');
-    props.onHide();
-  }
+  const [error, setError] = useState('');
+
+  const handleLogin = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          "Email": email,
+          "Password": password,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError(errorData.error || 'Login failed');
+      } else {
+        const userData = await response.json();
+        localStorage.setItem('user', JSON.stringify(userData));
+        Swal.fire({
+          icon: 'success',
+          title: 'Login successful!',
+          text: 'Welcome back!',
+        });
+        setEmail('');
+        setPassword('');
+        setError('');
+        props.onHide();
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An unexpected error occurred. Please try again later.');
+    }
+  };
 
   return (
     <Modal show={props.show} onHide={props.onHide}>
@@ -36,6 +68,7 @@ function Login(props) {
               onChange={(e) => setPassword(e.target.value)}
             />
           </Form.Group>
+          {error && <div className="text-danger mb-3">{error}</div>}
         </Form>
       </Modal.Body>
       <Modal.Footer>

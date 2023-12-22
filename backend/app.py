@@ -2,7 +2,6 @@ from flask import Flask
 from user_routes import user_routes
 
 app = Flask(__name__)
-app.register_blueprint(user_routes)
 
 
 def add_cors_headers(response):
@@ -13,6 +12,7 @@ def add_cors_headers(response):
     return response
 
 
-app.after_request(add_cors_headers)
+user_routes.after_request(add_cors_headers)
+app.register_blueprint(user_routes)
 if __name__ == '__main__':
     app.run(host="127.0.0.1", debug=True)

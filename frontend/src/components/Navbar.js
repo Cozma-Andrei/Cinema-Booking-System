@@ -3,7 +3,7 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import { Image } from "react-bootstrap";
 import logo from "./logo.png";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Login from "./Login";
 import Register from "./Register";
 
@@ -11,6 +11,17 @@ function CustomNavbar() {
   const [loginModalShow, setLoginModalShow] = useState(false);
   const [registerModalShow, setRegisterModalShow] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("user");
+    if (token)
+      setIsLoggedIn(true);
+  }, [loginModalShow]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+  };
 
   return (
     <div>
@@ -35,7 +46,7 @@ function CustomNavbar() {
                   <Nav.Link href="#register" onClick={() => setRegisterModalShow(true)}>Register</Nav.Link>
                 </>
               ) : (
-                <Nav.Link href="#logout" onClick={() => setLoginModalShow(true)}>Logout</Nav.Link>
+                <Nav.Link href="#logout" onClick={handleLogout}>Logout</Nav.Link>
               )}
             </Nav>
           </Navbar.Collapse>
