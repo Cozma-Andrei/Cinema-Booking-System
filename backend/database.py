@@ -1,5 +1,5 @@
 import pymongo
-from schemas import user_schema
+from schemas import user_schema, movie_schema
 
 
 def create_mongo_connection():
@@ -7,13 +7,21 @@ def create_mongo_connection():
     database_name = "Cinema"
     db = client[database_name]
 
-    collection_name = "Users"
-    if collection_name not in db.list_collection_names():
-        db.create_collection(collection_name)
+    collection_name1 = "Users"
+    if collection_name1 not in db.list_collection_names():
+        db.create_collection(collection_name1)
 
-    db.command({"collMod": collection_name, "validator": user_schema, "validationLevel": "strict",
+    db.command({"collMod": collection_name1, "validator": user_schema, "validationLevel": "strict",
                 "validationAction": "error"})
-    return client, db, db[collection_name]
+
+    collection_name2 = "Movies"
+    if collection_name2 not in db.list_collection_names():
+        db.create_collection(collection_name2)
+
+    db.command({"collMod": collection_name2, "validator": movie_schema, "validationLevel": "strict",
+                "validationAction": "error"})
+
+    return client, db, db[collection_name1], db[collection_name2]
 
 
-client, db, collection = create_mongo_connection()
+client, db, collection_users, collection_movies = create_mongo_connection()
