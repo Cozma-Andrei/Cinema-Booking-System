@@ -14,19 +14,19 @@ function CustomNavbar() {
   const [user, setUser] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem("user");
+    const token = localStorage.getItem('token');
     if (token) {
       setIsLoggedIn(true);
-      let username = token.split("username\":\"")[1];
-      username = username.split("\"")[0];
-      setUser(username);
+      setUser(localStorage.getItem('user'));
     }
   }, [loginModalShow]);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setIsLoggedIn(false);
     setUser('');
+    window.location.reload();
   };
 
   return (

@@ -46,3 +46,24 @@ movie_schema = {
         }
     }
 }
+
+reservation_schema = {
+    "$jsonSchema": {
+        "bsonType": "object",
+        "required": ["User", "Movie", "Tickets"],
+        "properties": {
+            "User": {
+                "bsonType": "objectId"
+            },
+            "Movie": {
+                "bsonType": "objectId"
+            },
+            "Tickets": {
+                "bsonType": "array",
+                "items": {
+                    "bsonType": "string"
+                }
+            }
+        }
+    }
+}

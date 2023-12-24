@@ -27,11 +27,12 @@ function Login(props) {
         setError(errorData.error || 'Login failed');
       } else {
         const userData = await response.json();
-        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', userData.token);
+        localStorage.setItem('user', userData.username);
         Swal.fire({
           icon: 'success',
           title: 'Login successful!',
-          text: 'Welcome back!',
+          text: 'Welcome back!'
         });
         setEmail('');
         setPassword('');

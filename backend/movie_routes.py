@@ -3,12 +3,21 @@ from flask import Blueprint, request, jsonify
 from user_routes import token_required
 from database import collection_movies as movies_collection
 from database import collection_users as users_collection
+from database import collection_reservations as reservations_collection
 import re
 import os
 from bson import ObjectId
 
 movie_routes = Blueprint("movie_routes", __name__)
 SECRET_KEY = os.getenv("SECRET_KEY")
+
+
+def generate_seats():
+    rows = 8
+    seats_per_row = 9
+    seats = [{"row": i // seats_per_row + 1, "seat": i % seats_per_row + 1, "available": True}
+             for i in range(rows * seats_per_row)]
+    return seats
 
 
 @movie_routes.route('/add_movie', methods=['POST'])
@@ -31,7 +40,8 @@ def add_movie(current_user):
         "Duration": data["Duration"],
         "Hour": data["Hour"],
         "Image_url": data["Image_url"],
-        "Day": data["Day"]
+        "Day": data["Day"],
+        "Seats": generate_seats()
     }
 
     result = movies_collection.insert_one(new_movie)
@@ -86,3 +96,77 @@ def get_movies_by_day():
         movie_list.append(movie_data)
 
     return jsonify({"movies": movie_list}), 200
+
+
+@movie_routes.route('/reserve_seats', methods=['POST'])
+@token_required
+def reserve_seats(current_user):
+    data = request.get_json()
+    movie_id = data["movie_id"]
+    selected_seats = data["selected_seats"]
+
+    if not movie_id or not selected_seats:
+        return jsonify({"error": "Invalid request"}), 400
+
+    movie = movies_collection.find_one({"_id": ObjectId(movie_id)})
+
+    if not movie:
+        return jsonify({"error": "Movie not found"}), 404
+
+    existing_reservation_count = reservations_collection.count_documents({
+        "Movie": ObjectId(movie_id),
+        "User": ObjectId(current_user)
+    })
+
+    if existing_reservation_count > 0:
+        return jsonify({"error": "Only one reservation per movie is allowed!"}), 400
+
+    for seat in selected_seats:
+        if not is_seat_available(movie, seat):
+            return jsonify({"error": f"Seat {seat} is already reserved"}), 400
+
+    update_result = movies_collection.update_one(
+        {"_id": ObjectId(movie_id)},
+        {"$set": {"Seats": reserve_seats_in_movie(movie["Seats"], selected_seats)}}
+    )
+
+    if update_result.modified_count > 0:
+        reservations_collection.insert_one({
+            "User": ObjectId(current_user),
+            "Movie": ObjectId(movie_id),
+            "Tickets": selected_seats
+        })
+        return jsonify({"message": "Seats reserved successfully"}), 200
+    else:
+        return jsonify({"error": "Failed to reserve seats"}), 500
+
+
+def is_seat_available(movie, seat):
+    return next((s for s in movie["Seats"] if
+                 s["seat"] == int(seat) % 10 and s["row"] == int(seat) // 10 + 1 and s["available"]), None) is not None
+
+
+def reserve_seats_in_movie(seats, selected_seats):
+    for seat in seats:
+        seat_index = f"{seat['row']}{seat['seat']}"
+        if seat_index in selected_seats:
+            seat["available"] = False
+    return seats
+
+
+@movie_routes.route('/get_reserved_seats', methods=['POST'])
+def get_reserved_seats():
+    data = request.get_json()
+    movie_id = data["movie_id"]
+
+    if not movie_id:
+        return jsonify({"error": "Invalid request"}), 400
+
+    movie = movies_collection.find_one({"_id": ObjectId(movie_id)})
+
+    if not movie:
+        return jsonify({"error": "Movie not found"}), 404
+
+    reserved_seats = [str(seat["row"] * 10 + seat["seat"]) for seat in movie["Seats"] if not seat["available"]]
+
+    return jsonify({"reservedSeats": reserved_seats}), 200
