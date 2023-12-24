@@ -1,30 +1,18 @@
-from flask import Flask, request, jsonify
-from database import create_mongo_connection
+from flask import Flask
+from user_routes import user_routes
 
 app = Flask(__name__)
-client, db, collection = create_mongo_connection()
 
-@app.route('/')
-def index():
-    return "Hello"
 
-@app.route('/add_user', methods=['POST'])
-def add_user():
-    data = request.get_json()
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Methods'] = 'OPTIONS, POST'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
 
-    if not validate_user_data(data):
-        return jsonify({"error": "Invalid user data"}), 400
 
-    new_user = {
-        "Username": data["Username"],
-        "Password": data["Password"]
-    }
-    result = collection.insert_one(new_user)
-
-    return jsonify({"message": "User added successfully", "user_id": str(result.inserted_id)}), 201
-
-def validate_user_data(data):
-    return "Username" in data and "Password" in data
-
+user_routes.after_request(add_cors_headers)
+app.register_blueprint(user_routes)
 if __name__ == '__main__':
     app.run(host="127.0.0.1", debug=True)
