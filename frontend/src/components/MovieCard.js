@@ -11,6 +11,7 @@ function MovieCard(props) {
     const [showModal, setShowModal] = useState(false);
     const [selectedSeats, setSelectedSeats] = useState([]);
     const [reservedSeats, setReservedSeats] = useState([]);
+    const [inputUser, setInputUser] = useState("");
     const pricePerTicket = 20;
 
     useEffect(() => {
@@ -132,9 +133,12 @@ function MovieCard(props) {
         });
     };
 
-    const reserveSeats = async () => {
+    const reserveSeats = async (inputUser) => {
         try {
             const token = localStorage.getItem('token');
+            const admin = localStorage.getItem('admin');
+            let user = '';
+            if (admin === "true") user = inputUser;
 
             if (!token) {
                 return;
@@ -150,6 +154,7 @@ function MovieCard(props) {
                 body: JSON.stringify({
                     movie_id: props.movie.id,
                     selected_seats: selectedSeats,
+                    user: user,
                 }),
             });
 
@@ -173,9 +178,10 @@ function MovieCard(props) {
     };
 
     const handleReserveConfirm = () => {
-        reserveSeats();
+        reserveSeats(inputUser);
         handleCloseModal();
         setSelectedSeats([]);
+        setInputUser("");
     };
 
     return (
@@ -205,6 +211,12 @@ function MovieCard(props) {
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
+                    {localStorage.getItem('admin') === "true" && (
+                        <div>
+                            <label for="usernameInput">Username ={'>'}</label>
+                            <input id="usernameInput" type="text" value={inputUser} onChange={(e) => setInputUser(e.target.value)} className='mb-3' />
+                        </div>
+                    )}
                     {renderSeats()}
                     {selectedSeats.length > 0 && (
                         <>
