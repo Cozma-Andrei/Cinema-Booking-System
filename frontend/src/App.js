@@ -8,6 +8,8 @@ function App() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [daysOfWeek, setDaysOfWeek] = useState([]);
   const [movies, setMovies] = useState([]);
+  const [userPage, setUserPage] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const currentDayIndex = (new Date().getDay() + 1) % 7;
@@ -26,27 +28,71 @@ function App() {
     if (selectedDay) {
       fetchMoviesByDay(selectedDay);
     }
-  }, [selectedDay]);
+  }, [selectedDay, isAdmin, userPage]);
+
+  useEffect(() => {
+    if (window.location.hash !== "#reservations") {
+      setIsAdmin(false);
+      setUserPage(false);
+    }
+    if (!isAdmin) setUserPage(true);
+    else setUserPage(false);
+  }, [isAdmin])
+
+  useEffect(() => {
+    if (window.location.hash !== "#reservations") {
+      setIsAdmin(false);
+      setUserPage(false);
+    }
+  }, [userPage])
 
   const handleDayClick = (day) => {
     setSelectedDay(day);
   };
 
+  const handlePageReservations = () => {
+    setIsAdmin(localStorage.getItem('admin'));
+  }
+
   const fetchMoviesByDay = async (day) => {
     try {
-      const response = await fetch('http://localhost:5000/get_movies_by_day', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ Day: day }),
-      });
+      if (!userPage) {
+        const response = await fetch('http://localhost:5000/get_movies_by_day', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Mode': 'no-cors',
+          },
+          body: JSON.stringify({ Day: day }),
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        setMovies(data.movies);
-      } else {
-        console.error('Error fetching movies');
+        if (response.ok) {
+          const data = await response.json();
+          setMovies(data.movies);
+        } else {
+          console.error('Error fetching movies');
+        }
+      }
+
+      else {
+        const token = localStorage.getItem('token');
+
+        const response = await fetch('http://localhost:5000/get_movies_by_person', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'Mode': 'no-cors',
+          },
+          body: JSON.stringify({ Day: day }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setMovies(data.movies);
+        } else {
+          console.error('Error fetching movies');
+        }
       }
     } catch (error) {
       console.error('Error fetching movies', error);
@@ -55,7 +101,7 @@ function App() {
 
   return (
     <div className="App">
-      <Navbar />
+      <Navbar goPageReservations={handlePageReservations} />
       <Container className="d-flex flex-column align-items-center text-center">
         <Row className="mt-3 mb-3 justify-content-center" style={{ width: "100%" }}>
           {daysOfWeek.map((day, index) => (
@@ -72,9 +118,17 @@ function App() {
         </Row>
 
         <Row className="justify-content-center">
-          {movies.map((movie, index) => (
+          {!isAdmin && !userPage && movies.map((movie, index) => (
             <Col key={index} xs={12} md={6} lg={4} className="mb-3 d-flex justify-content-center">
-              <MovieCard movie={movie} />
+              <MovieCard movie={movie} role={""} />
+            </Col>
+          ))}
+        </Row>
+
+        <Row className="justify-content-center">
+          {(isAdmin || userPage) && movies.map((movie, index) => (
+            <Col key={index} xs={12} md={6} lg={4} className="mb-3 d-flex justify-content-center">
+              <MovieCard movie={movie} role={"user"} />
             </Col>
           ))}
         </Row>

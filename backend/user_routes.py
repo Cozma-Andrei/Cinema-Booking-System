@@ -95,7 +95,11 @@ def login_user():
             "exp": datetime.utcnow() + timedelta(days=1)
         }
         token = jwt.encode(token_payload, SECRET_KEY, algorithm="HS256")
-        return jsonify({"token": token, "message": "Login successful", "username": str(user["Username"])}), 200
+        admin = False
+        if user["Email"].endswith("@ticketease.com"):
+            admin = True
+        return jsonify({"token": token, "message": "Login successful",
+                        "username": str(user["Username"]), "admin": admin}), 200
     else:
         return jsonify({"error": "Invalid credentials"}), 401
 
