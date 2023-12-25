@@ -11,16 +11,22 @@ function CustomNavbar() {
   const [loginModalShow, setLoginModalShow] = useState(false);
   const [registerModalShow, setRegisterModalShow] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem("user");
-    if (token)
+    const token = localStorage.getItem('token');
+    if (token) {
       setIsLoggedIn(true);
+      setUser(localStorage.getItem('user'));
+    }
   }, [loginModalShow]);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setIsLoggedIn(false);
+    setUser('');
+    window.location.reload();
   };
 
   return (
@@ -46,7 +52,10 @@ function CustomNavbar() {
                   <Nav.Link href="#register" onClick={() => setRegisterModalShow(true)}>Register</Nav.Link>
                 </>
               ) : (
-                <Nav.Link href="#logout" onClick={handleLogout}>Logout</Nav.Link>
+                <>
+                  <Nav.Link href="/">Hello, {user} !</Nav.Link>
+                  <Nav.Link href="#logout" onClick={handleLogout}>Logout</Nav.Link>
+                </>
               )}
             </Nav>
           </Navbar.Collapse>

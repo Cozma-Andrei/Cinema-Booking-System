@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from database import collection
+from database import collection_users as collection
 import re
 import jwt
 import os
@@ -95,7 +95,7 @@ def login_user():
             "exp": datetime.utcnow() + timedelta(days=1)
         }
         token = jwt.encode(token_payload, SECRET_KEY, algorithm="HS256")
-        return jsonify({"token": token, "message": "Login successful"}), 200
+        return jsonify({"token": token, "message": "Login successful", "username": str(user["Username"])}), 200
     else:
         return jsonify({"error": "Invalid credentials"}), 401
 
