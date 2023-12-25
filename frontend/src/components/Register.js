@@ -15,6 +15,7 @@ function Register(props) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Mode': 'no-cors',
         },
         body: JSON.stringify({
           "Email": email,

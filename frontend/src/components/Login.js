@@ -15,6 +15,7 @@ function Login(props) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Mode': 'no-cors',
         },
         body: JSON.stringify({
           "Email": email,
@@ -29,6 +30,7 @@ function Login(props) {
         const userData = await response.json();
         localStorage.setItem('token', userData.token);
         localStorage.setItem('user', userData.username);
+        localStorage.setItem('admin', userData.admin);
         Swal.fire({
           icon: 'success',
           title: 'Login successful!',

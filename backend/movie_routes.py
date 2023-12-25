@@ -20,6 +20,27 @@ def generate_seats():
     return seats
 
 
+@movie_routes.route('/delete_movie/<movie_id>', methods=['DELETE'])
+@token_required
+def delete_movie(current_user, movie_id):
+    user = users_collection.find_one({"_id": ObjectId(current_user)})
+
+    if not user or not user["Email"].endswith("@ticketease.com"):
+        return jsonify({"error": "Permission denied"}), 403
+
+    movie = movies_collection.find_one({"_id": ObjectId(movie_id)})
+
+    if not movie:
+        return jsonify({"error": "Movie not found"}), 404
+
+    delete_result = movies_collection.delete_one({"_id": ObjectId(movie_id)})
+
+    if delete_result.deleted_count > 0:
+        return jsonify({"message": "Movie deleted successfully", "name": movie["Name"], "hour": movie["Hour"]}), 200
+    else:
+        return jsonify({"error": "Failed to delete movie"}), 500
+
+
 @movie_routes.route('/add_movie', methods=['POST'])
 @token_required
 def add_movie(current_user):
@@ -46,7 +67,8 @@ def add_movie(current_user):
 
     result = movies_collection.insert_one(new_movie)
 
-    return jsonify({"message": "Movie added successfully", "movie_id": str(result.inserted_id)}), 201
+    return jsonify({"message": "Movie added successfully", "movie_id": str(result.inserted_id),
+                    "name": data["Name"], "hour": data["Hour"]}), 201
 
 
 def validate_movie_data(data):
@@ -98,12 +120,45 @@ def get_movies_by_day():
     return jsonify({"movies": movie_list}), 200
 
 
+@movie_routes.route('/get_movies_by_person', methods=['POST'])
+@token_required
+def get_movies_by_person(current_user):
+    data = request.get_json()
+
+    if "Day" not in data or not data["Day"]:
+        return jsonify({"error": "Day is required"}), 400
+
+    day = data["Day"]
+
+    reservations = reservations_collection.find({"User": ObjectId(current_user)})
+
+    movie_ids = [reservation["Movie"] for reservation in reservations]
+
+    movies = movies_collection.find({"_id": {"$in": movie_ids}, "Day": day})
+
+    movie_list = []
+    for movie in movies:
+        movie_data = {
+            "id": str(movie["_id"]),
+            "Name": movie["Name"],
+            "Categories": movie["Categories"],
+            "Duration": movie["Duration"],
+            "Hour": movie["Hour"],
+            "Image_url": movie["Image_url"],
+            "Day": movie["Day"]
+        }
+        movie_list.append(movie_data)
+
+    return jsonify({"movies": movie_list}), 200
+
+
 @movie_routes.route('/reserve_seats', methods=['POST'])
 @token_required
 def reserve_seats(current_user):
     data = request.get_json()
     movie_id = data["movie_id"]
     selected_seats = data["selected_seats"]
+    user = data["user"]
 
     if not movie_id or not selected_seats:
         return jsonify({"error": "Invalid request"}), 400
@@ -112,6 +167,10 @@ def reserve_seats(current_user):
 
     if not movie:
         return jsonify({"error": "Movie not found"}), 404
+
+    if user is not '':
+        input_user = users_collection.find_one({"Username": user})
+        current_user = input_user["_id"]
 
     existing_reservation_count = reservations_collection.count_documents({
         "Movie": ObjectId(movie_id),
@@ -168,5 +227,32 @@ def get_reserved_seats():
         return jsonify({"error": "Movie not found"}), 404
 
     reserved_seats = [str(seat["row"] * 10 + seat["seat"]) for seat in movie["Seats"] if not seat["available"]]
+
+    return jsonify({"reservedSeats": reserved_seats}), 200
+
+
+@movie_routes.route('/get_reserved_seats_by_person', methods=['POST'])
+@token_required
+def get_reserved_seats_by_person(current_user):
+    data = request.get_json()
+    movie_id = data["movie_id"]
+
+    if not movie_id:
+        return jsonify({"error": "Invalid request"}), 400
+
+    movie = movies_collection.find_one({"_id": ObjectId(movie_id)})
+
+    if not movie:
+        return jsonify({"error": "Movie not found"}), 404
+
+    reservation = reservations_collection.find_one({
+        "Movie": ObjectId(movie_id),
+        "User": ObjectId(current_user)
+    })
+
+    if not reservation:
+        return jsonify({"error": "Reservation not found"}), 404
+
+    reserved_seats = reservation["Tickets"]
 
     return jsonify({"reservedSeats": reserved_seats}), 200

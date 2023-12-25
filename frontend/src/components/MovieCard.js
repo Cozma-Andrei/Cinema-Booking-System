@@ -11,6 +11,7 @@ function MovieCard(props) {
     const [showModal, setShowModal] = useState(false);
     const [selectedSeats, setSelectedSeats] = useState([]);
     const [reservedSeats, setReservedSeats] = useState([]);
+    const [inputUser, setInputUser] = useState("");
     const pricePerTicket = 20;
 
     useEffect(() => {
@@ -24,7 +25,7 @@ function MovieCard(props) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Mode': 'no-cors'
+                    'Mode': 'no-cors',
                 },
                 body: JSON.stringify({
                     movie_id: props.movie.id
@@ -37,6 +38,30 @@ function MovieCard(props) {
                 setReservedSeats(data.reservedSeats);
             } else {
                 console.error(data.error);
+            }
+
+            if (props.role === "user") {
+                const token = localStorage.getItem('token');
+
+                const response = await fetch('http://localhost:5000/get_reserved_seats_by_person', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'Mode': 'no-cors',
+                    },
+                    body: JSON.stringify({
+                        movie_id: props.movie.id
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    setSelectedSeats(data.reservedSeats);
+                } else {
+                    console.error(data.error);
+                }
             }
         } catch (error) {
             console.error('Error retrieving reserved seats:', error);
@@ -76,8 +101,9 @@ function MovieCard(props) {
                         {seats.map(seat => (
                             <div
                                 key={seat}
-                                className={`seat ${selectedSeats.includes(`${row}${seat}`) ? 'selected' : ''} ${reservedSeats.includes(`${row}${seat}`) ? 'reserved' : ''}`}
-                                onClick={() => handleSeatSelect(`${row}${seat}`)}
+                                className={`seat ${selectedSeats.includes(`${row}${seat}`) ? 'selected' : ''}
+                                    ${reservedSeats.includes(`${row}${seat}`) ? 'reserved' : ''}`}
+                                onClick={() => { props.role === "" && handleSeatSelect(`${row}${seat}`) }}
                             >
                                 {seat}
                             </div>
@@ -107,9 +133,12 @@ function MovieCard(props) {
         });
     };
 
-    const reserveSeats = async () => {
+    const reserveSeats = async (inputUser) => {
         try {
             const token = localStorage.getItem('token');
+            const admin = localStorage.getItem('admin');
+            let user = '';
+            if (admin === "true") user = inputUser;
 
             if (!token) {
                 return;
@@ -120,11 +149,12 @@ function MovieCard(props) {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
-                    'Mode': 'no-cors'
+                    'Mode': 'no-cors',
                 },
                 body: JSON.stringify({
                     movie_id: props.movie.id,
                     selected_seats: selectedSeats,
+                    user: user,
                 }),
             });
 
@@ -148,9 +178,10 @@ function MovieCard(props) {
     };
 
     const handleReserveConfirm = () => {
-        reserveSeats();
+        reserveSeats(inputUser);
         handleCloseModal();
         setSelectedSeats([]);
+        setInputUser("");
     };
 
     return (
@@ -168,14 +199,24 @@ function MovieCard(props) {
                 </Card.Text>
             </Card.Body>
             <Card.Body>
-                {isLoggedIn && <Button variant="primary" onClick={handleReserveClick}>Reserve Now</Button>}
+                {isLoggedIn && <Button variant="primary" onClick={handleReserveClick}>
+                    {props.role === "" ? 'Reserve Now' : 'See Reserved Seats'}
+                </Button>}
             </Card.Body>
 
             <Modal show={showModal} onHide={handleCloseModal} className="moviecard-modal">
                 <Modal.Header closeButton>
-                    <Modal.Title>Reserve Tickets</Modal.Title>
+                    <Modal.Title>
+                        {props.role === "" ? 'Reserve Tickets' : 'Reserved Seats'}
+                    </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
+                    {localStorage.getItem('admin') === "true" && props.role === "" && (
+                        <div>
+                            <label for="usernameInput">Username ={'>'}</label>
+                            <input id="usernameInput" type="text" value={inputUser} onChange={(e) => setInputUser(e.target.value)} className='mb-3' />
+                        </div>
+                    )}
                     {renderSeats()}
                     {selectedSeats.length > 0 && (
                         <>
@@ -194,9 +235,9 @@ function MovieCard(props) {
                     <Button variant="secondary" onClick={handleCloseModal}>
                         Close
                     </Button>
-                    <Button variant="primary" onClick={handleReserveConfirm}>
+                    {props.role === "" && <Button variant="primary" onClick={handleReserveConfirm}>
                         Reserve
-                    </Button>
+                    </Button>}
                 </Modal.Footer>
             </Modal>
         </Card>

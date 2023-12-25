@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import Login from "./Login";
 import Register from "./Register";
 
-function CustomNavbar() {
+function CustomNavbar(props) {
   const [loginModalShow, setLoginModalShow] = useState(false);
   const [registerModalShow, setRegisterModalShow] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -24,9 +24,10 @@ function CustomNavbar() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('admin');
     setIsLoggedIn(false);
     setUser('');
-    window.location.reload();
+    window.location.href = '/';
   };
 
   return (
@@ -54,6 +55,9 @@ function CustomNavbar() {
               ) : (
                 <>
                   <Nav.Link href="/">Hello, {user} !</Nav.Link>
+                  <Nav.Link href="#reservations" onClick={props.goPageReservations}>Go to your reservations.</Nav.Link>
+                  {localStorage.getItem('admin') === "true" &&
+                    <Nav.Link href="#admin" onClick={props.goPageAdmin}>Go to admin panel.</Nav.Link>}
                   <Nav.Link href="#logout" onClick={handleLogout}>Logout</Nav.Link>
                 </>
               )}
