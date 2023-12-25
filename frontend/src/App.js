@@ -58,11 +58,13 @@ function App() {
   const handlePageReservations = () => {
     setIsAdmin(false);
     setUserPage(true);
+    fetchMoviesByDay(selectedDay);
   };
 
   const handlePageAdmin = () => {
     setIsAdmin(true);
     setUserPage(false);
+    fetchMoviesByDay(selectedDay);
   };
 
   const handleAddMovie = () => {
@@ -104,6 +106,7 @@ function App() {
     deleteMovie(selectedMovieToDelete);
     setSelectedMovieToDelete(null);
     setShowDeleteModal(false);
+    fetchMoviesByDay(selectedDay);
   };
 
   const handleCancelDeleteMovie = () => {
@@ -113,11 +116,14 @@ function App() {
 
   const fetchMoviesByDay = async (day) => {
     try {
-      if (!userPage && !isAdmin) {
-        const response = await fetch('http://localhost:5000/get_movies_by_day', {
+      if (userPage) {
+        const token = localStorage.getItem('token');
+
+        const response = await fetch('http://localhost:5000/get_movies_by_person', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
             'Mode': 'no-cors',
           },
           body: JSON.stringify({ Day: day }),
@@ -131,14 +137,11 @@ function App() {
         }
       }
 
-      else if (userPage) {
-        const token = localStorage.getItem('token');
-
-        const response = await fetch('http://localhost:5000/get_movies_by_person', {
+      else if (!userPage) {
+        const response = await fetch('http://localhost:5000/get_movies_by_day', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
             'Mode': 'no-cors',
           },
           body: JSON.stringify({ Day: day }),

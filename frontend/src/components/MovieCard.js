@@ -211,7 +211,7 @@ function MovieCard(props) {
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    {localStorage.getItem('admin') === "true" && (
+                    {localStorage.getItem('admin') === "true" && props.role === "" && (
                         <div>
                             <label for="usernameInput">Username ={'>'}</label>
                             <input id="usernameInput" type="text" value={inputUser} onChange={(e) => setInputUser(e.target.value)} className='mb-3' />

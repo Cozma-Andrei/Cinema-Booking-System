@@ -126,9 +126,3 @@ def token_required(f):
         return f(current_user, *args, **kwargs)
 
     return decorated
-
-
-@user_routes.route('/protected_route', methods=['GET'])
-@token_required
-def protected_route(current_user):
-    return jsonify({'message': 'This is a protected route', 'user_id': current_user})

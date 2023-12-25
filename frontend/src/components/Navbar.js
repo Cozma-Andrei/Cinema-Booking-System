@@ -55,9 +55,9 @@ function CustomNavbar(props) {
               ) : (
                 <>
                   <Nav.Link href="/">Hello, {user} !</Nav.Link>
-                  <Nav.Link href="#reservations" onClick={props.goPageReservations}>Go to your reservations</Nav.Link>
+                  <Nav.Link href="#reservations" onClick={props.goPageReservations}>Go to your reservations.</Nav.Link>
                   {localStorage.getItem('admin') === "true" &&
-                    <Nav.Link href="#admin" onClick={props.goPageAdmin}>Go to admin panel</Nav.Link>}
+                    <Nav.Link href="#admin" onClick={props.goPageAdmin}>Go to admin panel.</Nav.Link>}
                   <Nav.Link href="#logout" onClick={handleLogout}>Logout</Nav.Link>
                 </>
               )}
