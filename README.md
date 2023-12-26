@@ -25,7 +25,7 @@
     * rulare frontend: cd frontend; npm start
     * rulare backend: cd backend; python3 app.py
 * Pentru rularea "cli_app":
-    * cd cli_app; python3 run.py
+    * cd backend/cli_app; python3 run.py
 * Din cauza ca este blocat implicit mecanismul Cross-origin resource sharing (CORS) pe browser-ele moderne, a trebuit pentru a permite efectuarea request-urilor din frontend catre backend sa instalam o extensie de Microsoft Edge/Chrome care sa activeze CORS:
     * https://chromewebstore.google.com/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf
 
