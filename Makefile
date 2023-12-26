@@ -1,8 +1,7 @@
 build:
 	cd frontend
-	npm i
+	npm install
 	cd ..
-	pwd
 	pip install -r backend/requirements.txt
 
 run_frontend:
